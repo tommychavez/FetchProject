@@ -1,10 +1,3 @@
-//
-//  FetchiOSCodingChallanegeUITests.swift
-//  FetchiOSCodingChallanegeUITests
-//
-//  Created by rnd2019 on 9/4/24.
-//
-
 import XCTest
 
 final class FetchiOSCodingChallanegeUITests: XCTestCase {

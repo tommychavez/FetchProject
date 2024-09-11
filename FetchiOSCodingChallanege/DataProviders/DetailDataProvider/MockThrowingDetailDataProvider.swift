@@ -1,8 +1,7 @@
-//
-//  MockThrowingDetailDataProvider.swift
-//  FetchiOSCodingChallanege
-//
-//  Created by rnd2019 on 9/10/24.
-//
+import SwiftUI
 
-import Foundation
+struct MockThrowingDetailDataProvider: DetailDataProvider {
+    func getDetails(id: String) async throws -> MealDetailsDTO {
+        throw URLError(.unknown)
+    }
+}

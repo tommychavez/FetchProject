@@ -18,6 +18,9 @@ struct DessertDetailView: View {
                     AsyncImageView(imageSize: viewModel.imageSize, imageUrl: mealDetail.mealThumb)
                     instructions(instructions: mealDetail.instructions)
                     ingredients(mealDetail.ingredients)
+                } else if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .font(.body.bold())
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -29,12 +32,17 @@ struct DessertDetailView: View {
         .refreshable {
             viewModel.getData()
         }
+        .onDisappear {
+            viewModel.onDisappear()
+        }
         .navigationTitle(viewModel.mealDetail?.meal ?? "")
         .navigationBarTitleDisplayMode(.inline)
     }
     
     @ViewBuilder
     private func instructions(instructions: String) -> some View {
+        Text(viewModel.instructionsTitle)
+            .font(.body.bold())
         HStack(alignment: .top) {
             viewModel.collapsableImage
                 .foregroundColor(.red)
@@ -53,7 +61,7 @@ struct DessertDetailView: View {
     
     @ViewBuilder
     private func ingredients(_ ingredients: [Ingredient]) -> some View {
-        Text("Ingredients")
+        Text(viewModel.ingredientsTitle)
             .font(.body.bold())
         ForEach(ingredients) { ingredient in
             HStack {
@@ -63,26 +71,6 @@ struct DessertDetailView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-    }
-}
-
-struct MealDetail {
-    let id: String
-    let meal: String
-    let instructions: String
-    let mealThumb: String
-    let ingredients: [Ingredient]
-}
-
-struct Ingredient: Decodable, Identifiable {
-    let id: String
-    let name: String
-    let measure: String
-    
-    init(name: String?, measure: String?) {
-        self.name = name ?? ""
-        self.measure = measure ?? ""
-        self.id = UUID().uuidString
     }
 }
 

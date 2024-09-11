@@ -1,21 +1,27 @@
 import SwiftUI
 
 class DessertListViewModel: ObservableObject {
-    @MainActor @Published var desserts: [Dessert] = []
+    @MainActor @Published var meals: [Meal] = []
     @MainActor @Published var imageSize: CGFloat = 100
     @MainActor @Published var navigationTitle: String = "Desserts"
+    @MainActor @Published var errorMessage: String?
     
-    let dataProvider: DessertListDataProvider
+    private let dataProvider: ListDataProvider
+    private var tasks =  [Task<(), Never>]()
     
-    init(dataProvider: DessertListDataProvider = DessertListDataProvider()) {
+    init(dataProvider: ListDataProvider = DessertListDataProvider()) {
         self.dataProvider = dataProvider
     }
     
+    func onDisappear() {
+        tasks.forEach { $0.cancel() }
+        tasks.removeAll()
+    }
+    
     func getData() {
-        Task {
-            let response = try? await dataProvider.getDesserts()
-            if let response {
-                let desserts: [Dessert] = response.meals.map {
+      let task = Task {
+          if let response = try? await dataProvider.getList(), !response.meals.isEmpty {
+                let meals: [Meal] = response.meals.map {
                     .init(
                         id: $0.idMeal,
                         title: $0.strMeal,
@@ -25,10 +31,18 @@ class DessertListViewModel: ObservableObject {
                     .sorted {
                         $0.title < $1.title
                     }
+                
                 await MainActor.run {
-                    self.desserts = desserts
+                    self.meals = meals
+                    self.errorMessage = nil
+                }
+            } else {
+                await MainActor.run {
+                    errorMessage = "Error pull to refresh"
+                    meals = []
                 }
             }
         }
+        tasks.append(task)
     }
 }

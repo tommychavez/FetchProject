@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct DataProvider {
-    func getData<T: Decodable>(url: String) async throws -> T {
-        if let url = URL(string: url) {
+    func getData<T: Decodable>(apiEndpoint: APIEndpoint) async throws -> T {
+        if let url = apiEndpoint.url {
             do {
                 let (data, response) = try await URLSession.shared.data(from: url)
                 if let urlResponse = response as? HTTPURLResponse, urlResponse.statusCode >= 200, urlResponse.statusCode < 300 {
@@ -11,7 +11,7 @@ struct DataProvider {
                 }
                 throw URLError(.badServerResponse)
             } catch {
-                throw URLError(.badServerResponse)
+                throw URLError(.cannotDecodeRawData)
             }
         }
         throw URLError(.badURL)

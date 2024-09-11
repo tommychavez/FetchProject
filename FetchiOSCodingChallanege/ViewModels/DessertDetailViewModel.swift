@@ -6,51 +6,59 @@ class DessertDetailViewModel: ObservableObject {
     @MainActor @Published var expand: Bool = false
     @MainActor @Published var collapsableImage: Image = chevronUpImage
     @MainActor @Published var imageSize: CGFloat = 250
+    @MainActor @Published var ingredientsTitle = "Ingredients"
+    @MainActor @Published var instructionsTitle = "Instructions"
+    @MainActor @Published var errorMessage: String?
     
     let dessertId: String
-    let dataProvider: DessertDetailDataProvider
-    let chevronDownImage = Image(systemName: "chevron.down")
-    static let chevronUpImage = Image(systemName: "chevron.up")
+    private let dataProvider: DetailDataProvider
+    private let chevronDownImage = Image(systemName: "chevron.down")
+    private static let chevronUpImage = Image(systemName: "chevron.up")
+    private var tasks =  [Task<(), Never>]()
     private var cancellables = Set<AnyCancellable>()
     
     init(
         dessertId: String,
-        dessertDetailDataProvider: DessertDetailDataProvider = DessertDetailDataProvider()
+        dataProvider: DetailDataProvider = DessertDetailDataProvider()
     ) {
         self.dessertId = dessertId
-        self.dataProvider = dessertDetailDataProvider
-        sinkExpand()
+        self.dataProvider = dataProvider
+        sink()
     }
     
     func onDisappear() {
-        
+        cancellables.forEach { $0.cancel() }
+        cancellables.removeAll()
+        tasks.forEach { $0.cancel() }
+        tasks.removeAll()
     }
     
-    private func sinkExpand() {
+    private func sink() {
         $expand
-            .sink { [weak self] value in
+            .sink { [weak self] expandIsOn in
                 guard let self = self else {
                     return
                 }
                 
                 DispatchQueue.main.async {
-                    self.collapsableImage = value ? DessertDetailViewModel.chevronUpImage : self.chevronDownImage
+                    self.collapsableImage = expandIsOn ? DessertDetailViewModel.chevronUpImage : self.chevronDownImage
                 }
             }
             .store(in: &cancellables)
     }
     
     func collapsablePressed() {
-        Task {
+        let task = Task {
             await MainActor.run {
                 expand.toggle()
             }
         }
+        tasks.append(task)
     }
     
     func getData() {
-        Task {
-            if let result = try? await dataProvider.getDessertDetails(id: dessertId), let firstMeal = result.meals.first {
+        let task =  Task {
+            if let result = try? await dataProvider.getDetails(id: dessertId), let firstMeal = result.meals.first {
                 let ingredients: [Ingredient] = [
                     .init(name: firstMeal.strIngredient1, measure: firstMeal.strMeasure1),
                     .init(name: firstMeal.strIngredient2, measure: firstMeal.strMeasure2),
@@ -71,7 +79,7 @@ class DessertDetailViewModel: ObservableObject {
                     .init(name: firstMeal.strIngredient17, measure: firstMeal.strMeasure17),
                     .init(name: firstMeal.strIngredient18, measure: firstMeal.strMeasure18),
                     .init(name: firstMeal.strIngredient19, measure: firstMeal.strMeasure19)
-                ].filter { !$0.measure.isEmpty && !$0.name.isEmpty  }
+                ].filter { !$0.measure.isEmpty && !$0.name.isEmpty }
                 
                await MainActor.run {
                     mealDetail = .init(
@@ -81,8 +89,15 @@ class DessertDetailViewModel: ObservableObject {
                         mealThumb: firstMeal.strMealThumb,
                         ingredients: ingredients
                     )
+                   errorMessage = nil
+                }
+            } else {
+                await MainActor.run {
+                    errorMessage = "Error pull to refresh"
+                    mealDetail = nil
                 }
             }
         }
+        tasks.append(task)
     }
 }

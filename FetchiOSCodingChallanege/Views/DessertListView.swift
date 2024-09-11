@@ -15,23 +15,31 @@ struct DessertListView: View {
         .refreshable {
             viewModel.getData()
         }
+        .onDisappear {
+            viewModel.onDisappear()
+        }
         .navigationTitle(viewModel.navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
     }
     
     @ViewBuilder
     private var dessertList: some View {
-        ForEach(viewModel.desserts) { dessert in
-            NavigationLink {
-                DessertDetailView(dessertId: dessert.id)
-            } label: {
-                dessertCell(dessert: dessert)
+        if !viewModel.meals.isEmpty {
+            ForEach(viewModel.meals) { dessert in
+                NavigationLink {
+                    DessertDetailView(dessertId: dessert.id)
+                } label: {
+                    dessertCell(dessert: dessert)
+                }
             }
+        } else if let errorMessage = viewModel.errorMessage {
+            Text(errorMessage)
+                .font(.body.bold())
         }
     }
     
     @ViewBuilder
-    private func dessertCell(dessert: Dessert) -> some View {
+    private func dessertCell(dessert: Meal) -> some View {
         HStack {
             AsyncImageView(imageSize: viewModel.imageSize, imageUrl: dessert.imageUrl)
             Text(dessert.title)
@@ -42,12 +50,6 @@ struct DessertListView: View {
         .padding()
         .border(.black)
     }
-}
-
-struct Dessert: Identifiable {
-    let id: String
-    let title: String
-    let imageUrl: String
 }
 
 #Preview {

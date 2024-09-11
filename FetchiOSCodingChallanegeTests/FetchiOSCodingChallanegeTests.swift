@@ -1,10 +1,3 @@
-//
-//  FetchiOSCodingChallanegeTests.swift
-//  FetchiOSCodingChallanegeTests
-//
-//  Created by rnd2019 on 9/4/24.
-//
-
 import XCTest
 @testable import FetchiOSCodingChallanege
 

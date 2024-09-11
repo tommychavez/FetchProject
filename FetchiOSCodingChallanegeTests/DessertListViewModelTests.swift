@@ -1,35 +1,60 @@
-//
-//  DessertListViewModelTests.swift
-//  FetchiOSCodingChallanegeTests
-//
-//  Created by rnd2019 on 9/8/24.
-//
-
 import XCTest
+import Combine
+@testable import FetchiOSCodingChallanege
 
 final class DessertListViewModelTests: XCTestCase {
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
-
+    var vm: DessertListViewModel? = nil
+    var cancellables = Set<AnyCancellable>()
+    
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        vm = nil
+        cancellables.forEach { $0.cancel() }
+        cancellables.removeAll()
     }
-
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+    
+    func testDessertListViewModel_getData_updatesMeals() async throws {
+        // given
+        vm = .init(dataProvider: MockListDataProvider())
+        guard let vm else {
+            return
         }
+        // when
+        let expectation = XCTestExpectation(description: "expectation")
+        vm.$meals
+            .dropFirst()
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+        vm.getData()
+        await fulfillment(of: [expectation])
+        // then
+        let meals = await vm.meals
+        let errorMessage = await vm.errorMessage
+        XCTAssertTrue(!meals.isEmpty)
+        XCTAssertNil(errorMessage)
     }
-
+    
+    func testDessertListViewModel_getData_updatesErrorMessage() async throws {
+        // given
+        vm = .init(dataProvider: MockThrowingListDataProvider())
+        guard let vm else {
+            return
+        }
+        // when
+        let expectation = XCTestExpectation(description: "expectation")
+        vm.$meals
+            .dropFirst()
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+        vm.getData()
+        await fulfillment(of: [expectation])
+        // then
+        let errorMessage = await vm.errorMessage
+        let meals = await vm.meals
+        XCTAssertNotNil(errorMessage)
+        XCTAssertTrue(meals.isEmpty)
+    }
 }

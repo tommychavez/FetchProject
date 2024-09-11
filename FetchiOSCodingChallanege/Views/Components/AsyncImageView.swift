@@ -17,5 +17,5 @@ struct AsyncImageView: View {
 }
 
 #Preview {
-    AsyncImageView(imageSize: 100, imageUrl: "")
+    AsyncImageView(imageSize: 100, imageUrl: "https://www.themealdb.com/images/media/meals/1549542877.jpg")
 }

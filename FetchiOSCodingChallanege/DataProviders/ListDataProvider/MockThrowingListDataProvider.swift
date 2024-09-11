@@ -1,8 +1,7 @@
-//
-//  MockThrowingListDataProvider.swift
-//  FetchiOSCodingChallanege
-//
-//  Created by rnd2019 on 9/10/24.
-//
+import SwiftUI
 
-import Foundation
+struct MockThrowingListDataProvider: ListDataProvider {
+    func getList() async throws -> MealsDTO {
+        throw URLError(.unknown)
+    }
+}
